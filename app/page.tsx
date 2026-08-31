@@ -25,10 +25,10 @@ export default async function HomePage() {
         <ShieldLogo />
         <div>
           <h1 className="font-display text-3xl font-bold uppercase tracking-wide leading-none text-primary">
-            Tangenziale di Schrödinger
+            A56 di Schrödinger
           </h1>
           <p className="text-muted text-sm mt-1 font-sans">
-            La tangenziale di Napoli: aperta e chiusa finché non la osservi.
+            La A56: aperta e chiusa finché non la osservi.
           </p>
         </div>
       </header>

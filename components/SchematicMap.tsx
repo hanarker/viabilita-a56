@@ -367,7 +367,7 @@ export function SchematicMap({
     <div
       className="w-full"
       data-orientation={orientation}
-      aria-label={`Mappa stilizzata della Tangenziale — direzione ${DIREZIONE_LABEL[direction]}`}
+      aria-label={`Mappa stilizzata della A56 — direzione ${DIREZIONE_LABEL[direction]}`}
     >
       <style>{`
         @keyframes schematic-pulse-ring {

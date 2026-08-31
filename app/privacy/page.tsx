@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { SectionPanel } from '@/components/SectionPanel'
 
 export const metadata: Metadata = {
-  title: 'Privacy e Cookie — Tangenziale di Schrödinger',
+  title: 'Privacy e Cookie — A56 di Schrödinger',
   description: 'Informativa sul trattamento dei dati personali e sui cookie utilizzati dal sito.',
 }
 

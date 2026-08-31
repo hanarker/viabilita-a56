@@ -1,8 +1,10 @@
 @AGENTS.md
 
-# Tangenziale di Schrödinger
+# A56 di Schrödinger
 
-Sito Next.js (App Router, Tailwind 4) che mostra in tempo reale lo stato delle uscite della Tangenziale di Napoli e le chiusure serali programmate: aperta e chiusa finché non la osservi. Fonte: scraping di tangenzialedinapoli.it, interpretato da LLM (OpenAI).
+Sito Next.js (App Router, Tailwind 4) che mostra in tempo reale lo stato delle uscite della A56 (Tangenziale di Napoli) e le chiusure serali programmate: aperta e chiusa finché non la osservi. Fonte: scraping di tangenzialedinapoli.it, interpretato da LLM (OpenAI).
+
+Nota sul branding: il nome proprio "Tangenziale di Napoli" non va usato nel branding pubblico del sito (title, meta tag, UI) per motivi legali — si usa la denominazione generica "A56". Restano invariati (non branding pubblico, nessuna rilevanza legale): il prompt LLM in `lib/interpreter.ts`, il commento JSDoc in `lib/svincoli.ts`, l'URL del sito terzo scrapato (`tangenzialedinapoli.it`, citato anche nel footer come attribuzione fonte), e gli identificatori tecnici interni mai esposti — tipo TypeScript `TangenzialeState`, chiave Redis `tangenziale:state`, chiave localStorage `tangenziale-cookie-consent` (rinominarli non ha beneficio legale e la chiave Redis invaliderebbe lo stato di produzione).
 
 ## Comandi utili
 - `npm run dev` - dev server su localhost:3000

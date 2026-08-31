@@ -101,16 +101,16 @@ export function InfoSections() {
           Sono un cittadino, non un&apos;azienda. Ho automatizzato e reso disponibile per tutti, qualcosa che 
           ho fatto un sacco di volte. Copiavo e incollavo le informazioni ufficiali, le mettevo su ChatGPT e mi
           facevo dire se la mia uscita fosse aperta o chiusa. Poi ho pensato che avrei potuto fare di meglio.
-          Mettere online una mappa facilmente consultabile e rendere fruibile un&apos;informazione essenziale — la tangenziale è aperta o chiusa? In fondo,
+          Mettere online una mappa facilmente consultabile e rendere fruibile un&apos;informazione essenziale — la A56 è aperta o chiusa? In fondo,
           come il gatto di Schrödinger, è tutte e due le cose finché non la guardi: da qui il nome.
         </p>
       </SectionPanel>
 
       <SectionPanel id="perche" titolo="Perché questo sito" icona={<FlagIcon />}>
         <p className="text-foreground leading-relaxed">
-          Non tolleravo più di imboccare la tangenziale dopo mezzanotte senza sapere se la mia
+          Non tolleravo più di imboccare la A56 dopo mezzanotte senza sapere se la mia
           uscita fosse aperta.
-          Gli avvisi ufficiali esistono, ma sono scritti in legalese da
+          Gli avvisi ufficiali esistono, ma una mappa immediata è piu comoda e intuitiva. Non c&apos;è niente di peggio di
           qualcuno che non si mette nei panni dell&apos;automobilista: tu vuoi solo sapere se si
           passa oppure no.
         </p>
@@ -123,7 +123,7 @@ export function InfoSections() {
 
       <SectionPanel
         id="cosa-non-mi-piace"
-        titolo="Cosa non mi piace della tangenziale"
+        titolo="Cosa non mi piace della A56"
         icona={<WarningIcon />}
       >
         <ul className="grid gap-3 sm:grid-cols-3">

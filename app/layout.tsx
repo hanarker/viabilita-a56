@@ -24,9 +24,9 @@ const barlowCondensed = Barlow_Condensed({
   variable: '--font-barlow-condensed',
 })
 
-const TITLE = 'Tangenziale di Schrödinger — Napoli, aperta o chiusa?'
+const TITLE = 'A56 di Schrödinger — aperta o chiusa?'
 const DESCRIPTION =
-  'Lo stato in tempo reale della Tangenziale di Napoli: aperta e chiusa finché non la osservi. Uscite aperte, in lavori o chiuse per entrambe le direzioni.'
+  'Lo stato in tempo reale della A56: aperta e chiusa finché non la osservi. Uscite aperte, in lavori o chiuse per entrambe le direzioni.'
 
 export const metadata: Metadata = {
   title: TITLE,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
-    siteName: 'Tangenziale di Schrödinger',
+    siteName: 'A56 di Schrödinger',
     locale: 'it_IT',
     type: 'website',
   },

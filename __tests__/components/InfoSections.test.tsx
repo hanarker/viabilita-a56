@@ -8,7 +8,7 @@ describe('InfoSections', () => {
     expect(screen.getByRole('heading', { name: /chi sono/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /perché questo sito/i })).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { name: /cosa non mi piace della tangenziale/i })
+      screen.getByRole('heading', { name: /cosa non mi piace della a56/i })
     ).toBeInTheDocument()
   })
 
@@ -19,7 +19,7 @@ describe('InfoSections', () => {
     expect(container.querySelector('section#cosa-non-mi-piace')).toBeInTheDocument()
   })
 
-  it('elenca le tre criticità della tangenziale', () => {
+  it('elenca le tre criticità della A56', () => {
     render(<InfoSections />)
     expect(screen.getByRole('heading', { name: /5 centesimi/i })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /caselli fuori servizio/i })).toBeInTheDocument()

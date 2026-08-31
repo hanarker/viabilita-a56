@@ -57,7 +57,7 @@ export function Navbar() {
         >
           <ShieldLogo width={22} height={24} variant="inverse" />
           <span className="font-display text-base sm:text-lg font-bold uppercase tracking-wide leading-none">
-            Tangenziale di Schrödinger
+            A56 di Schrödinger
           </span>
         </a>
 
