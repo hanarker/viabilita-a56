@@ -18,7 +18,8 @@ Lo stato è persistito su **Upstash Redis** (non più file locale): servono anch
 ## Architettura (pipeline dati)
 ```
 scripts/{update-state,cron}.ts / app/api/cron/update (Vercel Cron) → lib/update-runner.ts (pipeline condivisa)
-  → lib/scraper.ts    scarica e estrae il testo avvisi (cheerio, whitespace normalizzato)
+  → lib/scraper.ts    scraping a due livelli: lista /viabilità → N pagine di dettaglio (vedi Gotchas)
+      → lib/scraper-parse.ts  funzioni pure (parseListaAvvisi, parseCorpoAvviso, formatSource)
   → change-detection  se il testo === state.source esistente: LLM SALTATO, aggiorna solo checkedAt
   → lib/interpreter.ts LLM (gpt-5, default in interpretAvvisi) classifica svincoli + estrae finestre orarie
   → lib/store.ts      valida (zod) e scrive su Redis (chiave DEFAULT_STATE_KEY)
@@ -49,6 +50,8 @@ app/page.tsx (force-dynamic) → readState → MapViewSwitcher/SchematicMap + Ev
 - Su errore scraping/LLM lo stato precedente NON va sovrascritto: si marca `stale: true` (`markStale` in update-runner).
 
 ## Gotchas
+- **Struttura del sito sorgente (Liferay, cambiata ad agosto 2026)**: gli avvisi NON sono più nella homepage. `lib/scraper.ts` scarica prima la lista `TARGET_URL + /viabilità` (portlet Liferay Asset Publisher, `#news-list .list-item`, un `a.list-title` + `.list-header` con la data grezza per item, ordinati per data di pubblicazione decrescente — nessun parsing di date), poi il dettaglio (`.journal-content-article`) dei primi `MAX_AVVISI` (3, costante in `lib/scraper.ts`) link, in parallelo. I testi vengono concatenati con `formatSource` in blocchi `## <titolo> (pubblicato il <data>)`, separati da riga vuota, con i confini di paragrafo/`<li>` preservati come newline (non collassati su riga singola: `lib/interpreter.ts` ragiona per paragrafi separati per unire le finestre, quindi preservare la struttura reale del testo riduce la varianza LLM). Un fetch di dettaglio fallito viene loggato e scartato (`console.error`), senza bloccare l'update: si fallisce (`markStale`) solo se la lista è irraggiungibile/vuota o se *nessun* dettaglio è recuperabile. Le fixture di test (`fixtures/html/viabilita-lista.html`, `avviso-dettaglio.html`) sono HTML reale del sito scaricato il 31/08/2026, non sintetico: se il sito cambia ancora struttura, questi test la colgono.
+- **Limite noto**: gli avvisi di **annullamento/rettifica** pubblicati come news separata (es. "CHIUSURA 27.07 - Parziale annullamento e integrazione") non vengono riconciliati col contenuto dell'avviso originale — l'LLM riceve entrambi i testi nello stesso `source` ma nessuna istruzione esplicita dice quale prevale. Un avviso revocato può quindi restare "attivo" finché non esce dalla finestra dei 3 avvisi più recenti.
 - `SchematicMap` ha due orientamenti: `horizontal` (desktop) e `vertical` (mobile, stile metro); `MapViewSwitcher` li renderizza entrambi con visibilità responsive (`sm:hidden`/`hidden sm:block`) — un'asserzione sui nodi va scopata con `[data-orientation=...]`. Id SVG (filtri) univoci per variante.
 - Il sito sorgente scrive "in direzione Autostrade/mare" come sinonimi: il prompt LLM li normalizza a `capodichino`/`pozzuoli` (enum rigido, zod fallisce su valori fuori enum).
 - Distinzione uscite vs tratti (introdotta per differenziare i disagi minori dai gravi): il prompt LLM istruisce a mettere in `items` (giallo) le chiusure di singolo svincolo ("verrà chiuso lo svincolo d'uscita/ingresso «X»") e in `tratti` (rosso implicito) le chiusure di tratto autostradale con "conseguente uscita obbligatoria «Z»", mappando i nomi citati (anche composti con "/") agli id in `SVINCOLO_IDS`. Un id fuori enum in `da`/`a`/`uscitaObbligatoria` fa fallire la validazione zod (stato precedente preservato, `markStale`).

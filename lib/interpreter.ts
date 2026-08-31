@@ -139,6 +139,12 @@ l'ultima occorrenza nel testo sovrascriva o faccia perdere le finestre di un'occ
 precedente. In pratica, prima di scrivere l'item/tratto finale, cerca nell'intero testo
 OGNI paragrafo che lo riguarda e unisci le finestre di tutti.
 
+Il testo che segue è composto da più avvisi distinti, ognuno introdotto da
+un'intestazione "## <titolo> (pubblicato il <data>)" e pubblicato in un momento diverso.
+La stessa regola di fusione vale ANCHE TRA avvisi diversi: se lo stesso svincolo o
+tratto compare in più avvisi con intestazioni diverse, unisci le finestre di tutti invece
+di considerare solo l'avviso più recente.
+
 Restituisci SOLO un JSON con questa struttura:
 {
   "items": [
