@@ -1,6 +1,7 @@
 import OpenAI from 'openai'
 import { z } from 'zod'
 import { SVINCOLI, SVINCOLO_IDS } from '@/lib/svincoli'
+import { HOMEPAGE_ALERT_HEADING } from '@/lib/scraper-parse'
 import type { SvincoloState, TrattoState } from '@/lib/types'
 
 const ClosureWindowSchema = z.object({
@@ -144,6 +145,29 @@ un'intestazione "## <titolo> (pubblicato il <data>)" e pubblicato in un momento 
 La stessa regola di fusione vale ANCHE TRA avvisi diversi: se lo stesso svincolo o
 tratto compare in più avvisi con intestazioni diverse, unisci le finestre di tutti invece
 di considerare solo l'avviso più recente.
+
+ECCEZIONE alla fusione — ANNULLAMENTI E RETTIFICHE: se un avviso dichiara esplicitamente
+che una chiusura (già citata altrove nel testo) NON verrà effettuata o è stata
+annullata/sospesa/revocata (frasi tipiche: "NON SARÀ EFFETTUATA", "è stata annullata",
+"non avrà luogo", "è stata revocata/sospesa"), quella specifica finestra/data va ESCLUSA
+dal risultato finale per lo svincolo o tratto interessato, invece di essere fusa con le
+altre. Se dopo l'esclusione non restano altre finestre per quello svincolo/tratto,
+ometti del tutto quell'item/tratto dalla risposta. Identifica lo svincolo/tratto e la
+finestra annullata dagli stessi dettagli (nomi, date, orari) citati nella frase di
+annullamento, non dal solo nome del tratto.
+
+Se un blocco del testo inizia con l'intestazione "${HOMEPAGE_ALERT_HEADING}" si
+tratta di un avviso urgente pubblicato in homepage (chiusure straordinarie disposte da
+Questura/Prefettura, annullamenti dell'ultimo minuto): ha PRIORITÀ su tutti gli altri
+avvisi del testo. In caso di conflitto sullo stesso svincolo/tratto, applica quanto
+dichiarato in questo blocco (incluse le eccezioni di annullamento sopra) anche se gli
+altri avvisi sembrano più dettagliati o precedenti in ordine di lettura.
+
+Una chiusura con orario di INIZIO ma nessun orario di FINE indicato (es. "dalle ore
+19:00 di oggi e fino a cessate esigenze", "fino a nuovo avviso", "a tempo
+indeterminato") è una chiusura SENZA finestra temporale definita: trattala come le
+chiusure permanenti, omettendo il campo "windows" (sempre attiva), anche se ha un orario
+di inizio preciso.
 
 Restituisci SOLO un JSON con questa struttura:
 {

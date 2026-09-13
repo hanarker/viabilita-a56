@@ -4,6 +4,7 @@ import { join } from 'path'
 import {
   parseListaAvvisi,
   parseCorpoAvviso,
+  parseAvvisoHomepage,
   formatSource,
   type Avviso,
 } from '@/lib/scraper-parse'
@@ -20,6 +21,14 @@ const fixtureDettaglio = readFileSync(
 )
 const fixtureVuota = readFileSync(
   join(process.cwd(), 'fixtures/html/nessun-avviso.html'),
+  'utf-8'
+)
+const fixtureHomepageAvviso = readFileSync(
+  join(process.cwd(), 'fixtures/html/homepage-avviso.html'),
+  'utf-8'
+)
+const fixtureHomepageNessunAvviso = readFileSync(
+  join(process.cwd(), 'fixtures/html/homepage-nessun-avviso.html'),
   'utf-8'
 )
 
@@ -76,6 +85,35 @@ describe('parseCorpoAvviso', () => {
     expect(() => parseCorpoAvviso(fixtureLista)).toThrow(
       'Corpo avviso non trovato'
     )
+  })
+})
+
+describe('parseAvvisoHomepage', () => {
+  it('estrae il testo del riquadro "Avviso ai viaggiatori" dalla homepage', () => {
+    const testo = parseAvvisoHomepage(fixtureHomepageAvviso)
+
+    expect(testo).toContain('Fuorigrotta')
+    expect(testo).toContain('fino a cessate esigenze')
+    expect(testo).toContain('NON SARA')
+  })
+
+  it('preserva i confini di blocco come righe separate', () => {
+    const testo = parseAvvisoHomepage(fixtureHomepageAvviso)
+
+    expect(testo).not.toBeNull()
+    expect(testo).not.toMatch(/ {2,}/)
+  })
+
+  it('restituisce null se non è presente nessun avviso in homepage', () => {
+    const testo = parseAvvisoHomepage(fixtureHomepageNessunAvviso)
+
+    expect(testo).toBeNull()
+  })
+
+  it('restituisce null se la pagina non ha il riquadro AlertArea', () => {
+    const testo = parseAvvisoHomepage(fixtureVuota)
+
+    expect(testo).toBeNull()
   })
 })
 

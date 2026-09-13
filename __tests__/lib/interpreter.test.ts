@@ -11,6 +11,7 @@ vi.mock('openai', () => {
 })
 
 import { interpretAvvisi } from '@/lib/interpreter'
+import { HOMEPAGE_ALERT_HEADING } from '@/lib/scraper-parse'
 
 const AVVISO_ESEMPIO = `Fuorigrotta chiusa in direzione Pozzuoli dalle 23:00 alle 06:00.
 Chiuso il tratto autostradale tra Camaldoli e Arenella in direzione Capodichino,
@@ -259,5 +260,37 @@ describe('interpretAvvisi', () => {
     const systemPrompt: string = messages[0].content
     const currentYear = new Date().getFullYear().toString()
     expect(systemPrompt).toContain(currentYear)
+  })
+
+  it('istruisce a escludere le finestre esplicitamente annullate invece di fonderle', async () => {
+    mockResponse({ items: [] })
+
+    await interpretAvvisi('sk-test', AVVISO_ESEMPIO)
+
+    const [{ messages }] = mockCreate.mock.calls[0]
+    const systemPrompt: string = messages[0].content
+    expect(systemPrompt).toMatch(/NON SARÀ EFFETTUATA/)
+    expect(systemPrompt).toMatch(/ESCLUSA/)
+  })
+
+  it('istruisce a dare priorità al blocco avviso homepage in caso di conflitto', async () => {
+    mockResponse({ items: [] })
+
+    await interpretAvvisi('sk-test', AVVISO_ESEMPIO)
+
+    const [{ messages }] = mockCreate.mock.calls[0]
+    const systemPrompt: string = messages[0].content
+    expect(systemPrompt).toContain(HOMEPAGE_ALERT_HEADING)
+    expect(systemPrompt).toMatch(/PRIORITÀ/)
+  })
+
+  it('istruisce a omettere "windows" per chiusure con inizio ma senza fine definita', async () => {
+    mockResponse({ items: [] })
+
+    await interpretAvvisi('sk-test', AVVISO_ESEMPIO)
+
+    const [{ messages }] = mockCreate.mock.calls[0]
+    const systemPrompt: string = messages[0].content
+    expect(systemPrompt).toMatch(/cessate esigenze/)
   })
 })

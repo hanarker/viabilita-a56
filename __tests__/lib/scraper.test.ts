@@ -14,8 +14,28 @@ const fixtureVuota = readFileSync(
   join(process.cwd(), 'fixtures/html/nessun-avviso.html'),
   'utf-8'
 )
+const fixtureHomepageAvviso = readFileSync(
+  join(process.cwd(), 'fixtures/html/homepage-avviso.html'),
+  'utf-8'
+)
+const fixtureHomepageNessunAvviso = readFileSync(
+  join(process.cwd(), 'fixtures/html/homepage-nessun-avviso.html'),
+  'utf-8'
+)
 
 const BASE_URL = 'https://example.com'
+
+/** Router di default per il mock di fetch: lista, dettagli, homepage senza avviso. */
+function defaultRouter(input: string | URL) {
+  const url = input.toString()
+  if (url.includes('/w/')) {
+    return Promise.resolve(okResponse(fixtureDettaglio))
+  }
+  if (url.includes('viabilit')) {
+    return Promise.resolve(okResponse(fixtureLista))
+  }
+  return Promise.resolve(okResponse(fixtureHomepageNessunAvviso))
+}
 
 // Mock globale di fetch prima di importare lo scraper
 const mockFetch = vi.fn()
@@ -36,22 +56,65 @@ describe('scrapeAvvisi', () => {
   })
 
   it('scarica la lista e i dettagli, restituendo un source con i titoli concatenati', async () => {
+    mockFetch.mockImplementation(defaultRouter)
+
+    const { scrapeAvvisi } = await import('@/lib/scraper')
+    const source = await scrapeAvvisi(BASE_URL)
+
+    expect(mockFetch).toHaveBeenCalledTimes(5) // 1 lista + 3 dettagli (MAX_AVVISI) + 1 homepage
+    expect(source).toContain('Chiusure dal 31.08 al 06.09.2026')
+    expect(source).toContain('Chiusure dal 24.08 al 30.08.2026')
+    expect(source).toContain('Chiusure dal 17.08 al 23.08.2026')
+    expect(source).not.toContain('Chiusura 02.08')
+  })
+
+  it('antepone l\'avviso homepage al source, se presente, con intestazione prioritaria', async () => {
     mockFetch.mockImplementation((input: string | URL) => {
       const url = input.toString()
       if (url.includes('/w/')) {
         return Promise.resolve(okResponse(fixtureDettaglio))
       }
-      return Promise.resolve(okResponse(fixtureLista))
+      if (url.includes('viabilit')) {
+        return Promise.resolve(okResponse(fixtureLista))
+      }
+      return Promise.resolve(okResponse(fixtureHomepageAvviso))
     })
 
-    const { scrapeAvvisi } = await import('@/lib/scraper')
+    const { scrapeAvvisi, HOMEPAGE_ALERT_HEADING } = await import('@/lib/scraper')
     const source = await scrapeAvvisi(BASE_URL)
 
-    expect(mockFetch).toHaveBeenCalledTimes(4) // 1 lista + 3 dettagli (MAX_AVVISI)
+    expect(source.indexOf(HOMEPAGE_ALERT_HEADING)).toBe(0)
+    expect(source).toContain('Fuorigrotta')
+    expect(source).toContain('NON SARA')
+    expect(source.indexOf('Fuorigrotta')).toBeLessThan(source.indexOf('Chiusure dal 31.08'))
+  })
+
+  it('non include intestazioni homepage se non c\'è nessun avviso urgente', async () => {
+    mockFetch.mockImplementation(defaultRouter)
+
+    const { scrapeAvvisi, HOMEPAGE_ALERT_HEADING } = await import('@/lib/scraper')
+    const source = await scrapeAvvisi(BASE_URL)
+
+    expect(source).not.toContain(HOMEPAGE_ALERT_HEADING)
+  })
+
+  it('non fallisce se il fetch della homepage va in errore: degrada senza avviso urgente', async () => {
+    mockFetch.mockImplementation((input: string | URL) => {
+      const url = input.toString()
+      if (url.includes('/w/')) {
+        return Promise.resolve(okResponse(fixtureDettaglio))
+      }
+      if (url.includes('viabilit')) {
+        return Promise.resolve(okResponse(fixtureLista))
+      }
+      return Promise.resolve(errorResponse(500))
+    })
+
+    const { scrapeAvvisi, HOMEPAGE_ALERT_HEADING } = await import('@/lib/scraper')
+    const source = await scrapeAvvisi(BASE_URL)
+
+    expect(source).not.toContain(HOMEPAGE_ALERT_HEADING)
     expect(source).toContain('Chiusure dal 31.08 al 06.09.2026')
-    expect(source).toContain('Chiusure dal 24.08 al 30.08.2026')
-    expect(source).toContain('Chiusure dal 17.08 al 23.08.2026')
-    expect(source).not.toContain('Chiusura 02.08')
   })
 
   it('lancia un errore se il fetch della lista fallisce', async () => {

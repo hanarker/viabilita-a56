@@ -13,11 +13,39 @@ export interface Avviso extends AvvisoLink {
   corpo: string
 }
 
+/**
+ * Intestazione anteposta all'avviso homepage nel `source` (vedi
+ * `lib/scraper.ts`): il testo esatto è citato nel prompt LLM
+ * (`lib/interpreter.ts`) per fargli riconoscere questo blocco come
+ * prioritario (può annullare/rettificare le chiusure sottostanti).
+ */
+export const HOMEPAGE_ALERT_HEADING =
+  '## AVVISO URGENTE (homepage — ha priorità: può annullare o rettificare le chiusure elencate sotto)'
+
 const LIST_ITEM_SELECTOR = '#news-list .list-item, .list-item'
 const LIST_TITLE_SELECTOR = 'a.list-title'
 const LIST_HEADER_SELECTOR = '.list-header'
 const ARTICLE_SELECTOR = '.journal-content-article'
-const BLOCK_TAGS = 'p, li, div, h1, h2, h3, h4, tr'
+const HOMEPAGE_ALERT_SELECTOR = '#AlertArea .journal-content-article'
+const BLOCK_TAGS = 'p, li, div, h1, h2, h3, h4, h5, h6, tr'
+
+/**
+ * Estrae il testo di un elemento preservando i confini tra blocchi (paragrafi,
+ * `<li>`, righe) come newline invece di collassare tutto su una riga sola.
+ * Usata sia per il corpo avviso sia per il riquadro "Avviso ai viaggiatori".
+ */
+function estraiTestoBlocco(root: ReturnType<ReturnType<typeof cheerio.load>>): string {
+  root.find('script, style').remove()
+  root.find('br').replaceWith('\n')
+  root.find(BLOCK_TAGS).append('\n')
+
+  return root
+    .text()
+    .split('\n')
+    .map((riga) => riga.replace(/[^\S\n]+/g, ' ').trim())
+    .filter(Boolean)
+    .join('\n')
+}
 
 /**
  * Estrae titolo, data e url assoluto di ogni avviso dalla pagina lista
@@ -58,21 +86,33 @@ export function parseCorpoAvviso(html: string): string {
     throw new Error('Corpo avviso non trovato')
   }
 
-  root.find('script, style').remove()
-  root.find('br').replaceWith('\n')
-  root.find(BLOCK_TAGS).append('\n')
+  const corpo = estraiTestoBlocco(root)
 
-  const righe = root
-    .text()
-    .split('\n')
-    .map((riga) => riga.replace(/[^\S\n]+/g, ' ').trim())
-    .filter(Boolean)
-
-  if (righe.length === 0) {
+  if (corpo.length === 0) {
     throw new Error('Corpo avviso non trovato')
   }
 
-  return righe.join('\n')
+  return corpo
+}
+
+/**
+ * Estrae il testo del riquadro "Avviso ai viaggiatori" in homepage, che ospita
+ * comunicazioni urgenti (chiusure straordinarie, annullamenti/rettifiche di
+ * chiusure già programmate) separate dalla pagina `/viabilità`. Restituisce
+ * `null` se il riquadro non è presente o non contiene un avviso attivo
+ * (condizione normale, non un errore: non sempre c'è un avviso urgente).
+ */
+export function parseAvvisoHomepage(html: string): string | null {
+  const $ = cheerio.load(html)
+  const root = $(HOMEPAGE_ALERT_SELECTOR).first()
+
+  if (!root.length) {
+    return null
+  }
+
+  const testo = estraiTestoBlocco(root)
+
+  return testo.length === 0 ? null : testo
 }
 
 /**
