@@ -76,7 +76,9 @@ function DirezioneLabel({ direzione }: { direzione: Direzione }) {
 function EntryRow({ entry }: { entry: ClosureEntry }) {
   // Notte standard (from→mattina dopo): orari nudi. Finestra anomala
   // multi-giorno: esplicita la data di fine per non ingannare il lettore.
-  const isMultiNight = nightSpanDays(entry.from, entry.to) > 1
+  // Fine non dichiarata ("fino a cessate esigenze"): niente orario di fine,
+  // lo si dice esplicitamente invece di mostrare una scadenza inventata.
+  const isMultiNight = entry.to != null && nightSpanDays(entry.from, entry.to) > 1
 
   return (
     <li className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3.5 py-3 border-t border-edge">
@@ -85,12 +87,18 @@ function EntryRow({ entry }: { entry: ClosureEntry }) {
       <DirezioneLabel direzione={entry.direzione} />
       <span className="tabular-nums text-sm font-medium text-foreground ml-auto">
         <time dateTime={entry.from}>{ORA_FORMATTER.format(new Date(entry.from))}</time>
-        {' – '}
-        <time dateTime={entry.to}>{ORA_FORMATTER.format(new Date(entry.to))}</time>
-        {isMultiNight && (
-          <span className="text-muted font-normal">
-            {' '}({formatSerataDate(new Date(entry.to))})
-          </span>
+        {entry.to != null ? (
+          <>
+            {' – '}
+            <time dateTime={entry.to}>{ORA_FORMATTER.format(new Date(entry.to))}</time>
+            {isMultiNight && (
+              <span className="text-muted font-normal">
+                {' '}({formatSerataDate(new Date(entry.to))})
+              </span>
+            )}
+          </>
+        ) : (
+          <span className="text-muted font-normal"> – fino a cessate esigenze</span>
         )}
       </span>
       {entry.active && (

@@ -6,7 +6,7 @@ export const DEFAULT_STATE_KEY = 'tangenziale:state'
 
 const ClosureWindowSchema = z.object({
   from: z.string(),
-  to: z.string(),
+  to: z.string().optional(),
 })
 
 const SvincoloStateSchema = z.object({

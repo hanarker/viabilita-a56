@@ -1,4 +1,5 @@
 import { SVINCOLI } from '@/lib/svincoli'
+import { resolveWindowEnd } from '@/lib/closure-window'
 import type {
   Direzione,
   Status,
@@ -19,8 +20,8 @@ export interface ClosureEntry {
   note?: string
   /** ISO originale della finestra */
   from: string
-  /** ISO originale della finestra */
-  to: string
+  /** ISO originale della finestra; assente se a fine indeterminata */
+  to?: string
   /** true se la finestra è attiva rispetto a `now` */
   active: boolean
   /** Id svincolo usato per l'ordinamento canonico (i tratti si ordinano sull'estremo `da`) */
@@ -178,10 +179,10 @@ function collectEntries(
   const dedup = new Map<string, ClosureEntry>()
   for (const item of items) {
     for (const window of item.windows ?? []) {
-      const to = new Date(window.to)
+      const to = resolveWindowEnd(window)
       if (to < now) continue // finestra già conclusa
 
-      const key = `${item.id}|${item.direzione}|${window.from}|${window.to}`
+      const key = `${item.id}|${item.direzione}|${window.from}|${window.to ?? 'open'}`
       if (dedup.has(key)) continue
 
       const from = new Date(window.from)
@@ -199,10 +200,10 @@ function collectEntries(
   }
   for (const t of tratti) {
     for (const window of t.windows ?? []) {
-      const to = new Date(window.to)
+      const to = resolveWindowEnd(window)
       if (to < now) continue // finestra già conclusa
 
-      const key = `${trattoId(t)}|${t.direzione}|${window.from}|${window.to}`
+      const key = `${trattoId(t)}|${t.direzione}|${window.from}|${window.to ?? 'open'}`
       if (dedup.has(key)) continue
 
       const from = new Date(window.from)

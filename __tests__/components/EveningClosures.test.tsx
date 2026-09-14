@@ -121,4 +121,19 @@ describe('EveningClosures', () => {
     render(<EveningClosures state={stateConChiusure} now={NOW} />)
     expect(screen.getAllByRole('listitem')).toHaveLength(2)
   })
+
+  it('finestra a fine indeterminata: mostra "fino a cessate esigenze" e nessun orario di fine', () => {
+    const state = makeState([
+      {
+        id: 'fuorigrotta',
+        direzione: 'pozzuoli',
+        status: 'rosso',
+        windows: [{ from: '2026-07-02T19:00:00+02:00' }],
+      },
+    ])
+    render(<EveningClosures state={state} now={NOW} />)
+    expect(screen.getByText('Fuorigrotta')).toBeInTheDocument()
+    expect(screen.getByText(/fino a cessate esigenze/i)).toBeInTheDocument()
+    expect(screen.getAllByText('19:00').length).toBeGreaterThan(0)
+  })
 })
