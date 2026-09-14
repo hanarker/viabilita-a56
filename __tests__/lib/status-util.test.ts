@@ -70,6 +70,22 @@ describe('isWindowActive', () => {
       isWindowActive([notte, altra], new Date('2026-07-02T23:30:00+02:00'))
     ).toBe(true)
   })
+
+  describe('finestra a fine indeterminata ("to" assente)', () => {
+    const openEnded: ClosureWindow = { from: '2026-09-13T19:00:00+02:00' }
+
+    it('ritorna true subito dopo l\'inizio', () => {
+      expect(isWindowActive([openEnded], new Date('2026-09-13T20:00:00+02:00'))).toBe(true)
+    })
+
+    it('ritorna false prima della scadenza implicita (06:00 del giorno dopo)', () => {
+      expect(isWindowActive([openEnded], new Date('2026-09-14T05:59:00+02:00'))).toBe(true)
+    })
+
+    it('ritorna false (verde) dopo la scadenza implicita alle 06:00 del giorno dopo', () => {
+      expect(isWindowActive([openEnded], new Date('2026-09-14T07:00:00+02:00'))).toBe(false)
+    })
+  })
 })
 
 describe('effectiveStatus', () => {
@@ -371,6 +387,29 @@ describe('statusBySvincoloForMap', () => {
     expect(map.get('capodimonte')?.pozzuoli).toBe('rosso')
     // Fuori dal tratto: non toccato
     expect(map.get('arenella')?.pozzuoli).toBe('verde')
+  })
+
+  it('tratto con finestra a fine indeterminata: rosso subito dopo l\'inizio, verde dopo la scadenza implicita', () => {
+    const state: TangenzialeState = {
+      items: [],
+      tratti: [
+        {
+          da: 'capodichino',
+          a: 'capodimonte',
+          direzione: 'pozzuoli',
+          uscitaObbligatoria: 'capodichino',
+          windows: [{ from: '2026-09-13T19:00:00+02:00' }],
+        },
+      ],
+      updatedAt: '2026-06-29T00:00:00.000Z',
+      source: 'test',
+      stale: false,
+    }
+    const subito = statusBySvincoloForMap(state, new Date('2026-09-13T20:00:00+02:00'))
+    expect(subito.get('capodichino')?.pozzuoli).toBe('rosso')
+
+    const dopoScadenza = statusBySvincoloForMap(state, new Date('2026-09-14T07:00:00+02:00'))
+    expect(dopoScadenza.get('capodichino')?.pozzuoli).toBe('verde')
   })
 
   it('non marca rosso gli svincoli intermedi nella direzione opposta a quella del tratto', () => {

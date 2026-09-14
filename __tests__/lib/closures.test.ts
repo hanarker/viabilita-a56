@@ -317,6 +317,25 @@ describe('buildEveningClosures', () => {
     expect(permanent[0].status).toBe('rosso')
   })
 
+  it('finestra a fine indeterminata: compare nei gruppi (non permanent) finché non scade', () => {
+    const state = makeState([
+      {
+        id: 'fuorigrotta',
+        direzione: 'pozzuoli',
+        status: 'rosso',
+        windows: [{ from: '2026-07-02T19:00:00+02:00' }],
+      },
+    ])
+    const subito = buildEveningClosures(state, new Date('2026-07-02T20:00:00+02:00'))
+    expect(subito.permanent).toEqual([])
+    expect(subito.groups).toHaveLength(1)
+    expect(subito.groups[0].entries[0].to).toBeUndefined()
+    expect(subito.groups[0].entries[0].active).toBe(true)
+
+    const dopoScadenza = buildEveningClosures(state, new Date('2026-07-03T07:00:00+02:00'))
+    expect(dopoScadenza.groups).toEqual([])
+  })
+
   it('filtra le finestre di tratto già concluse', () => {
     const tratto: TrattoState = {
       da: 'capodichino',

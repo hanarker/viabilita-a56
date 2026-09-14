@@ -284,7 +284,7 @@ describe('interpretAvvisi', () => {
     expect(systemPrompt).toMatch(/PRIORITÀ/)
   })
 
-  it('istruisce a omettere "windows" per chiusure con inizio ma senza fine definita', async () => {
+  it('istruisce a generare una finestra con "from" ma senza "to" per chiusure a fine indeterminata', async () => {
     mockResponse({ items: [] })
 
     await interpretAvvisi('sk-test', AVVISO_ESEMPIO)
@@ -292,5 +292,22 @@ describe('interpretAvvisi', () => {
     const [{ messages }] = mockCreate.mock.calls[0]
     const systemPrompt: string = messages[0].content
     expect(systemPrompt).toMatch(/cessate esigenze/)
+    expect(systemPrompt).toMatch(/omett\w* il campo "to"/i)
+  })
+
+  it('accetta e restituisce una finestra a fine indeterminata ("to" assente) su un item', async () => {
+    mockResponse({
+      items: [
+        {
+          id: 'fuorigrotta',
+          direzione: 'pozzuoli',
+          status: 'giallo',
+          windows: [{ from: '2026-09-13T19:00:00+02:00' }],
+        },
+      ],
+    })
+
+    const { items } = await interpretAvvisi('sk-test', AVVISO_ESEMPIO)
+    expect(items[0].windows).toEqual([{ from: '2026-09-13T19:00:00+02:00' }])
   })
 })

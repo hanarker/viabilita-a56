@@ -1,5 +1,6 @@
 import { SVINCOLI } from '@/lib/svincoli'
 import { romeDateKey } from '@/lib/closures'
+import { resolveWindowEnd } from '@/lib/closure-window'
 import type {
   Status,
   Direzione,
@@ -39,7 +40,7 @@ export function isWindowActive(
 
   return windows.some((w) => {
     const from = new Date(w.from)
-    const to = new Date(w.to)
+    const to = resolveWindowEnd(w)
     return now >= from && now <= to
   })
 }

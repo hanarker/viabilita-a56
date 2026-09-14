@@ -86,6 +86,25 @@ describe('store', () => {
     ])
   })
 
+  it('scrive e rilegge correttamente una finestra a fine indeterminata ("to" assente)', async () => {
+    const stateConFinestraAperta: TangenzialeState = {
+      items: [
+        {
+          id: 'fuorigrotta',
+          direzione: 'pozzuoli',
+          status: 'rosso',
+          windows: [{ from: '2026-09-13T19:00:00+02:00' }],
+        },
+      ],
+      updatedAt: '2026-09-13T19:00:00.000Z',
+      source: 'Avviso urgente di esempio',
+      stale: false,
+    }
+    await writeState(stateConFinestraAperta, TEST_KEY)
+    const read = await readState(TEST_KEY)
+    expect(read?.items[0].windows).toEqual([{ from: '2026-09-13T19:00:00+02:00' }])
+  })
+
   it('scrive e rilegge correttamente il campo checkedAt opzionale', async () => {
     const stateConCheckedAt: TangenzialeState = {
       ...stateOk,

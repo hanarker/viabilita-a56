@@ -2,11 +2,12 @@ import OpenAI from 'openai'
 import { z } from 'zod'
 import { SVINCOLI, SVINCOLO_IDS } from '@/lib/svincoli'
 import { HOMEPAGE_ALERT_HEADING } from '@/lib/scraper-parse'
+import { formatNowWithRomeOffset } from '@/lib/rome-time'
 import type { SvincoloState, TrattoState } from '@/lib/types'
 
 const ClosureWindowSchema = z.object({
   from: z.string(),
-  to: z.string(),
+  to: z.string().optional(),
 })
 
 const SVINCOLO_ID_ENUM = z.enum(SVINCOLO_IDS as [string, ...string[]])
@@ -36,40 +37,6 @@ const ResponseSchema = z.object({
 export interface InterpretedAvvisi {
   items: SvincoloState[]
   tratti: TrattoState[]
-}
-
-const ROME_TIMEZONE = 'Europe/Rome'
-
-/**
- * Formatta `now` nel fuso Europe/Rome come "YYYY-MM-DDTHH:mm:ss+HH:mm",
- * così il prompt indica sia l'istante corrente sia l'offset da usare
- * per le finestre temporali generate dall'LLM.
- */
-function formatNowWithRomeOffset(now: Date): string {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: ROME_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  }).formatToParts(now)
-
-  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? ''
-  const localIso = `${get('year')}-${get('month')}-${get('day')}T${get('hour')}:${get('minute')}:${get('second')}`
-
-  // Calcola l'offset corrente di Europe/Rome (+01:00 o +02:00) confrontando
-  // l'istante UTC con la stessa data/ora interpretata come locale.
-  const offsetMinutes = Math.round(
-    (new Date(`${localIso}Z`).getTime() - now.getTime()) / 60000
-  )
-  const sign = offsetMinutes >= 0 ? '+' : '-'
-  const abs = Math.abs(offsetMinutes)
-  const offset = `${sign}${String(Math.floor(abs / 60)).padStart(2, '0')}:${String(abs % 60).padStart(2, '0')}`
-
-  return `${localIso}${offset}`
 }
 
 function buildSystemPrompt(now: Date): string {
@@ -165,9 +132,12 @@ altri avvisi sembrano più dettagliati o precedenti in ordine di lettura.
 
 Una chiusura con orario di INIZIO ma nessun orario di FINE indicato (es. "dalle ore
 19:00 di oggi e fino a cessate esigenze", "fino a nuovo avviso", "a tempo
-indeterminato") è una chiusura SENZA finestra temporale definita: trattala come le
-chiusure permanenti, omettendo il campo "windows" (sempre attiva), anche se ha un orario
-di inizio preciso.
+indeterminato") ha una fine NON dichiarata, ma NON è una chiusura permanente: genera
+comunque una finestra in "windows" con SOLO il campo "from" valorizzato (data/ora di
+inizio calcolata come sopra) e OMETTI il campo "to" per quella finestra (non inventare
+un orario di fine). Riserva l'omissione COMPLETA del campo "windows" (sempre attiva) ai
+soli casi in cui il testo non fornisce NESSUN orario, nemmeno di inizio (es. lavori
+permanenti, divieti senza fascia oraria).
 
 Restituisci SOLO un JSON con questa struttura:
 {
@@ -194,6 +164,8 @@ Restituisci SOLO un JSON con questa struttura:
 
 Includi in "items" SOLO gli svincoli chiusi (uscita/ingresso, mai il caso "tratto").
 Includi in "tratti" SOLO le chiusure di tratto con uscita obbligatoria.
+Per una finestra con fine non dichiarata ("fino a cessate esigenze" e simili), ometti
+il campo "to" della finestra: {"from": "2026-06-30T19:00:00+02:00"} (senza "to").
 Non inventare svincoli: usa solo questi id: ${SVINCOLO_IDS.join(', ')}.`
 }
 

@@ -8,8 +8,13 @@ export type Direzione = 'capodichino' | 'pozzuoli'
 export interface ClosureWindow {
   /** ISO 8601 con offset Europe/Rome, es. "2026-06-30T23:00:00+02:00" */
   from: string
-  /** ISO 8601 con offset Europe/Rome, es. "2026-07-01T06:00:00+02:00" */
-  to: string
+  /**
+   * ISO 8601 con offset Europe/Rome, es. "2026-07-01T06:00:00+02:00".
+   * Assente = fine non dichiarata (es. "fino a cessate esigenze", "fino a
+   * nuovo avviso"): la scadenza effettiva va calcolata con
+   * `resolveWindowEnd` (lib/closure-window.ts), non letta direttamente qui.
+   */
+  to?: string
 }
 
 /** Stato di uno svincolo per una specifica direzione */
